@@ -1,0 +1,47 @@
+# Hyundai Motors POC - Terraform Variables Template
+# Copy this file to terraform.tfvars and populate with actual values
+# WARNING: Never commit terraform.tfvars to version control
+
+# AWS Account Configuration
+aws_account_id = "123456789012"  # Replace with your AWS account ID
+
+# Project Configuration
+project_name = "hyundai-poc"
+environment  = "interview"
+
+# Database Configuration
+db_master_username = "admin"
+db_master_password = ""  # Generate with: openssl rand -base64 32
+db_name            = "hyundai_poc"
+
+# AWS Regions
+regions = {
+  seoul   = "ap-northeast-2"
+  us_east = "us-east-1"
+  us_west = "us-west-2"
+}
+
+# Network Configuration
+vpc_cidrs = {
+  seoul   = "10.0.0.0/16"
+  us_east = "10.1.0.0/16"
+  us_west = "10.2.0.0/16"
+}
+
+# Aurora Configuration
+aurora_serverless_min_capacity = 0.5
+aurora_serverless_max_capacity = 2
+
+# ECS Configuration
+ecs_cpu    = "256"  # 0.25 vCPU
+ecs_memory = "512"  # 512 MB
+
+# DNS Configuration (optional - can use ALB DNS directly if no custom domain)
+domain_name = "hyundai-poc.com"  # Replace with your domain or leave as-is
+
+# Tagging
+tags = {
+  Project     = "Hyundai-POC"
+  Environment = "Interview"
+  ManagedBy   = "Terraform"
+}
