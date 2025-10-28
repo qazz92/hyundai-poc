@@ -11,65 +11,60 @@ interface LatencyResult {
 interface RegionInfo {
   name: string
   code: string
-  healthUrl: string
 }
 
 const regions: RegionInfo[] = [
   {
     name: 'Seoul',
     code: 'ap-northeast-2',
-    healthUrl: process.env.NEXT_PUBLIC_ALB_SEOUL_URL || 'http://localhost:3001/health',
   },
   {
     name: 'US East',
     code: 'us-east-1',
-    healthUrl: process.env.NEXT_PUBLIC_ALB_US_EAST_URL || 'http://localhost:3001/health',
   },
   {
     name: 'US West',
     code: 'us-west-2',
-    healthUrl: process.env.NEXT_PUBLIC_ALB_US_WEST_URL || 'http://localhost:3001/health',
   },
 ]
 
 export default function LatencyTable() {
   const [latencies, setLatencies] = useState<LatencyResult[]>([])
   const [loading, setLoading] = useState(true)
+  const [currentRegion, setCurrentRegion] = useState<string>('unknown')
 
-  // Measure latency to a given URL
-  const measureLatency = async (url: string, region: string): Promise<LatencyResult> => {
-    const startTime = performance.now()
-
-    try {
-      await fetch(url, { method: 'GET', cache: 'no-store' })
-      const endTime = performance.now()
-      const latencyMs = Math.round(endTime - startTime)
-
-      return {
-        region,
-        url,
-        latency_ms: latencyMs,
-      }
-    } catch (error) {
-      console.error(`Error measuring latency to ${region}:`, error)
-      return {
-        region,
-        url,
-        latency_ms: null,
-      }
-    }
-  }
-
-  // Measure latency to all regions
+  // Measure latency via backend API (server-to-server measurement)
   const measureAllLatencies = async () => {
     setLoading(true)
 
-    const results = await Promise.all(
-      regions.map((region) => measureLatency(region.healthUrl, region.code))
-    )
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+      const response = await fetch(`${apiUrl}/metrics/latency`, { cache: 'no-store' })
+      const data = await response.json()
 
-    setLatencies(results)
-    setLoading(false)
+      setCurrentRegion(data.current_region || 'unknown')
+
+      // Map backend response to our format
+      const results: LatencyResult[] = data.endpoints.map((endpoint: any) => ({
+        region: endpoint.region,
+        url: endpoint.url,
+        latency_ms: endpoint.latency_ms,
+      }))
+
+      setLatencies(results)
+    } catch (error) {
+      console.error('Error fetching latency metrics:', error)
+      // Set error state for all regions
+      setLatencies(
+        regions.map((region) => ({
+          region: region.code,
+          url: 'error',
+          latency_ms: null,
+        }))
+      )
+    } finally {
+      setLoading(false)
+    }
   }
 
   // Initial measurement and auto-refresh every 5 seconds

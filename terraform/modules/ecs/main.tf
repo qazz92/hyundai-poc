@@ -183,6 +183,18 @@ resource "aws_ecs_task_definition" "backend" {
         {
           name  = "LOG_LEVEL"
           value = "info"
+        },
+        {
+          name  = "ALB_SEOUL_URL"
+          value = "https://api-direct-seoul.${var.domain_name}/health"
+        },
+        {
+          name  = "ALB_US_EAST_URL"
+          value = "https://api-direct-us-east.${var.domain_name}/health"
+        },
+        {
+          name  = "ALB_US_WEST_URL"
+          value = "https://api-direct-us-west.${var.domain_name}/health"
         }
       ]
 
