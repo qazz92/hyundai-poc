@@ -2,12 +2,12 @@
 
 output "dashboard_name" {
   description = "CloudWatch dashboard name"
-  value       = aws_cloudwatch_dashboard.main.dashboard_name
+  value       = aws_cloudwatch_dashboard.main_new.dashboard_name
 }
 
 output "dashboard_arn" {
   description = "CloudWatch dashboard ARN"
-  value       = aws_cloudwatch_dashboard.main.dashboard_arn
+  value       = aws_cloudwatch_dashboard.main_new.dashboard_arn
 }
 
 output "firehose_delivery_stream_arn" {

@@ -107,11 +107,23 @@ resource "aws_rds_cluster" "aurora" {
   depends_on = [
     aws_rds_global_cluster.main
   ]
+
+  lifecycle {
+    ignore_changes = [
+      global_cluster_identifier,
+      database_name,
+      master_username,
+      master_password,
+      engine_version  # 버전 업그레이드 시에도 drift 발생 가능
+    ]
+  }
+
 }
 
-# Aurora Cluster Instance (Serverless v2)
+# Aurora Cluster Instance - Writer (Primary only) or Reader (all regions)
 resource "aws_rds_cluster_instance" "aurora" {
-  identifier         = "${var.project_name}-instance-${var.region_name}"
+  count              = var.is_primary ? 2 : 1
+  identifier         = "${var.project_name}-instance-${var.region_name}${count.index > 0 ? "-${count.index}" : ""}"
   cluster_identifier = aws_rds_cluster.aurora.id
   instance_class     = "db.serverless"
   engine             = aws_rds_cluster.aurora.engine
@@ -126,7 +138,8 @@ resource "aws_rds_cluster_instance" "aurora" {
   tags = merge(
     var.tags,
     {
-      Name = "${var.project_name}-aurora-instance-${var.region_name}"
+      Name = "${var.project_name}-aurora-instance-${var.region_name}${count.index > 0 ? "-reader" : var.is_primary ? "-writer" : "-reader"}"
+      Role = count.index == 0 && var.is_primary ? "writer" : "reader"
     }
   )
 }

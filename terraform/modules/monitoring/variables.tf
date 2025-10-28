@@ -33,6 +33,84 @@ variable "us_west_ecs_cluster_name" {
   type        = string
 }
 
+# Regional ECS Service Names
+variable "seoul_frontend_service_name" {
+  description = "Seoul frontend service name"
+  type        = string
+}
+
+variable "seoul_backend_service_name" {
+  description = "Seoul backend service name"
+  type        = string
+}
+
+variable "us_east_frontend_service_name" {
+  description = "US-East frontend service name"
+  type        = string
+}
+
+variable "us_east_backend_service_name" {
+  description = "US-East backend service name"
+  type        = string
+}
+
+variable "us_west_frontend_service_name" {
+  description = "US-West frontend service name"
+  type        = string
+}
+
+variable "us_west_backend_service_name" {
+  description = "US-West backend service name"
+  type        = string
+}
+
+# Regional ALB ARN Suffixes (for CloudWatch dimensions)
+variable "seoul_alb_arn_suffix" {
+  description = "Seoul ALB ARN suffix"
+  type        = string
+}
+
+variable "us_east_alb_arn_suffix" {
+  description = "US-East ALB ARN suffix"
+  type        = string
+}
+
+variable "us_west_alb_arn_suffix" {
+  description = "US-West ALB ARN suffix"
+  type        = string
+}
+
+# Regional Target Group ARN Suffixes
+variable "seoul_frontend_tg_arn_suffix" {
+  description = "Seoul frontend target group ARN suffix"
+  type        = string
+}
+
+variable "seoul_backend_tg_arn_suffix" {
+  description = "Seoul backend target group ARN suffix"
+  type        = string
+}
+
+variable "us_east_frontend_tg_arn_suffix" {
+  description = "US-East frontend target group ARN suffix"
+  type        = string
+}
+
+variable "us_east_backend_tg_arn_suffix" {
+  description = "US-East backend target group ARN suffix"
+  type        = string
+}
+
+variable "us_west_frontend_tg_arn_suffix" {
+  description = "US-West frontend target group ARN suffix"
+  type        = string
+}
+
+variable "us_west_backend_tg_arn_suffix" {
+  description = "US-West backend target group ARN suffix"
+  type        = string
+}
+
 # Firehose Configuration
 variable "firehose_buffer_size" {
   description = "Firehose buffer size in MB"

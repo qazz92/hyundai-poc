@@ -17,7 +17,7 @@ output "cluster_name" {
 
 output "frontend_task_definition_arn" {
   description = "Frontend task definition ARN"
-  value       = aws_ecs_task_definition.frontend.arn
+  value       = var.enable_frontend ? aws_ecs_task_definition.frontend[0].arn : null
 }
 
 output "backend_task_definition_arn" {
@@ -27,7 +27,7 @@ output "backend_task_definition_arn" {
 
 output "frontend_service_name" {
   description = "Frontend service name"
-  value       = aws_ecs_service.frontend.name
+  value       = var.enable_frontend ? aws_ecs_service.frontend[0].name : null
 }
 
 output "backend_service_name" {

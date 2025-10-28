@@ -127,6 +127,8 @@ module "alb_seoul" {
   vpc_id            = module.vpc_seoul.vpc_id
   public_subnet_ids = module.vpc_seoul.public_subnet_ids
   security_group_id = module.security_groups_seoul.alb_security_group_id
+  certificate_arn   = module.acm_seoul.certificate_arn
+  domain_name       = var.domain_name
   tags              = var.tags
 }
 
@@ -181,6 +183,8 @@ module "alb_us_east" {
   vpc_id            = module.vpc_us_east.vpc_id
   public_subnet_ids = module.vpc_us_east.public_subnet_ids
   security_group_id = module.security_groups_us_east.alb_security_group_id
+  certificate_arn   = module.acm_us_east.certificate_arn
+  domain_name       = var.domain_name
   tags              = var.tags
 }
 
@@ -235,6 +239,8 @@ module "alb_us_west" {
   vpc_id            = module.vpc_us_west.vpc_id
   public_subnet_ids = module.vpc_us_west.public_subnet_ids
   security_group_id = module.security_groups_us_west.alb_security_group_id
+  certificate_arn   = module.acm_us_west.certificate_arn
+  domain_name       = var.domain_name
   tags              = var.tags
 }
 
@@ -252,37 +258,20 @@ module "aurora_us_east" {
   project_name       = var.project_name
   region_name        = "us-east"
   is_primary         = true
+  
+  # Primary는 이 값들을 설정
   db_name            = var.db_name
   master_username    = var.db_master_username
   master_password    = var.db_master_password
+  
+  # Primary에서는 global_cluster_id를 null로 설정
+  global_cluster_id  = null
+  
   private_subnet_ids = module.vpc_us_east.private_subnet_ids
   security_group_id  = module.security_groups_us_east.aurora_security_group_id
   min_capacity       = var.aurora_serverless_min_capacity
   max_capacity       = var.aurora_serverless_max_capacity
   tags               = var.tags
-}
-
-# Secondary Aurora Cluster (Seoul)
-module "aurora_seoul" {
-  source = "./modules/aurora"
-  providers = {
-    aws = aws.seoul
-  }
-
-  project_name        = var.project_name
-  region_name         = "seoul"
-  is_primary          = false
-  global_cluster_id   = module.aurora_us_east.global_cluster_id
-  db_name             = var.db_name
-  master_username     = var.db_master_username
-  master_password     = var.db_master_password
-  private_subnet_ids  = module.vpc_seoul.private_subnet_ids
-  security_group_id   = module.security_groups_seoul.aurora_security_group_id
-  min_capacity        = var.aurora_serverless_min_capacity
-  max_capacity        = var.aurora_serverless_max_capacity
-  tags                = var.tags
-
-  depends_on = [module.aurora_us_east]
 }
 
 # Secondary Aurora Cluster (US-West)
@@ -295,18 +284,54 @@ module "aurora_us_west" {
   project_name        = var.project_name
   region_name         = "us-west"
   is_primary          = false
+  
+  # Secondary는 이 값들을 null로 설정 (중요!)
+  db_name             = null
+  master_username     = null
+  master_password     = null
+  
+  # Primary의 global cluster ID를 동적으로 참조
   global_cluster_id   = module.aurora_us_east.global_cluster_id
-  db_name             = var.db_name
-  master_username     = var.db_master_username
-  master_password     = var.db_master_password
+  
   private_subnet_ids  = module.vpc_us_west.private_subnet_ids
   security_group_id   = module.security_groups_us_west.aurora_security_group_id
   min_capacity        = var.aurora_serverless_min_capacity
   max_capacity        = var.aurora_serverless_max_capacity
   tags                = var.tags
 
+  # Primary가 완전히 생성된 후에 생성
   depends_on = [module.aurora_us_east]
 }
+
+# Secondary Aurora Cluster (Seoul)
+module "aurora_seoul" {
+  source = "./modules/aurora"
+  providers = {
+    aws = aws.seoul
+  }
+
+  project_name        = var.project_name
+  region_name         = "seoul"
+  is_primary          = false
+  
+  # Secondary는 이 값들을 null로 설정 (중요!)
+  db_name             = null
+  master_username     = null
+  master_password     = null
+  
+  # Primary의 global cluster ID를 동적으로 참조
+  global_cluster_id   = module.aurora_us_east.global_cluster_id
+  
+  private_subnet_ids  = module.vpc_seoul.private_subnet_ids
+  security_group_id   = module.security_groups_seoul.aurora_security_group_id
+  min_capacity        = var.aurora_serverless_min_capacity
+  max_capacity        = var.aurora_serverless_max_capacity
+  tags                = var.tags
+
+  # Primary가 완전히 생성된 후에 생성
+  depends_on = [module.aurora_us_east, module.aurora_us_west]
+}
+
 
 # ====================
 # ECS Services (placeholder image URIs - update after pushing to ECR)
@@ -324,8 +349,9 @@ module "ecs_seoul" {
   aws_region                 = var.regions.seoul
   task_cpu                   = var.ecs_cpu
   task_memory                = var.ecs_memory
-  desired_count              = 2
-  frontend_image             = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.regions.seoul}.amazonaws.com/hyundai-poc-frontend:latest"
+  desired_count              = 1
+  enable_frontend            = false  # Frontend only in US-East
+  frontend_image             = ""
   backend_image              = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.regions.seoul}.amazonaws.com/hyundai-poc-backend:latest"
   private_subnet_ids         = module.vpc_seoul.private_subnet_ids
   ecs_security_group_id      = module.security_groups_seoul.ecs_security_group_id
@@ -339,7 +365,8 @@ module "ecs_seoul" {
   db_name                    = var.db_name
   db_username                = var.db_master_username
   db_password_secret_arn     = data.aws_secretsmanager_secret.db_password_seoul.arn
-  backend_url                = "http://${module.alb_seoul.alb_dns_name}"
+  backend_url                = "https://api.${var.domain_name}"
+  domain_name                = var.domain_name
   tags                       = var.tags
 
   depends_on = [
@@ -360,7 +387,7 @@ module "ecs_us_east" {
   aws_region                 = var.regions.us_east
   task_cpu                   = var.ecs_cpu
   task_memory                = var.ecs_memory
-  desired_count              = 2
+  desired_count              = 1
   frontend_image             = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.regions.us_east}.amazonaws.com/hyundai-poc-frontend:latest"
   backend_image              = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.regions.us_east}.amazonaws.com/hyundai-poc-backend:latest"
   private_subnet_ids         = module.vpc_us_east.private_subnet_ids
@@ -375,7 +402,8 @@ module "ecs_us_east" {
   db_name                    = var.db_name
   db_username                = var.db_master_username
   db_password_secret_arn     = data.aws_secretsmanager_secret.db_password_us_east.arn
-  backend_url                = "http://${module.alb_us_east.alb_dns_name}"
+  backend_url                = "https://api.${var.domain_name}"
+  domain_name                = var.domain_name
   tags                       = var.tags
 
   depends_on = [
@@ -395,8 +423,9 @@ module "ecs_us_west" {
   aws_region                 = var.regions.us_west
   task_cpu                   = var.ecs_cpu
   task_memory                = var.ecs_memory
-  desired_count              = 2
-  frontend_image             = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.regions.us_west}.amazonaws.com/hyundai-poc-frontend:latest"
+  desired_count              = 1
+  enable_frontend            = false  # Frontend only in US-East
+  frontend_image             = ""
   backend_image              = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.regions.us_west}.amazonaws.com/hyundai-poc-backend:latest"
   private_subnet_ids         = module.vpc_us_west.private_subnet_ids
   ecs_security_group_id      = module.security_groups_us_west.ecs_security_group_id
@@ -410,13 +439,86 @@ module "ecs_us_west" {
   db_name                    = var.db_name
   db_username                = var.db_master_username
   db_password_secret_arn     = data.aws_secretsmanager_secret.db_password_us_west.arn
-  backend_url                = "http://${module.alb_us_west.alb_dns_name}"
+  backend_url                = "https://api.${var.domain_name}"
+  domain_name                = var.domain_name
   tags                       = var.tags
 
   depends_on = [
     module.aurora_us_east,
     module.aurora_us_west
   ]
+}
+
+# ====================
+# ACM SSL/TLS Certificates
+# ====================
+
+# ACM Certificate for CloudFront (must be in us-east-1)
+module "acm_cloudfront" {
+  source = "./modules/acm"
+  providers = {
+    aws = aws.us_east
+  }
+
+  project_name = var.project_name
+  region_name  = "cloudfront"
+  domain_name  = var.domain_name
+  subject_alternative_names = [
+    "*.${var.domain_name}"
+  ]
+  hosted_zone_id = "Z02639281DPI9IL5CWW86"
+  tags           = var.tags
+}
+
+# ACM Certificate for Seoul ALB
+module "acm_seoul" {
+  source = "./modules/acm"
+  providers = {
+    aws = aws.seoul
+  }
+
+  project_name = var.project_name
+  region_name  = "seoul"
+  domain_name  = var.domain_name
+  subject_alternative_names = [
+    "*.${var.domain_name}"
+  ]
+  hosted_zone_id = "Z02639281DPI9IL5CWW86"
+  tags           = var.tags
+}
+
+# ACM Certificate for US-East ALB
+module "acm_us_east" {
+  source = "./modules/acm"
+  providers = {
+    aws = aws.us_east
+  }
+
+  project_name = var.project_name
+  region_name  = "us-east-alb"
+  domain_name  = var.domain_name
+  subject_alternative_names = [
+    "*.${var.domain_name}"
+  ]
+  hosted_zone_id = "Z02639281DPI9IL5CWW86"
+  tags           = var.tags
+}
+
+# ACM Certificate for US-West ALB
+module "acm_us_west" {
+  source = "./modules/acm"
+  providers = {
+    aws = aws.us_west
+  }
+
+  project_name = var.project_name
+  region_name  = "us-west"
+  domain_name  = var.domain_name
+  subject_alternative_names = [
+    "*.${var.domain_name}"
+  ]
+  hosted_zone_id = "Z02639281DPI9IL5CWW86"
+  tags           = var.tags
 }
 
 # ====================
@@ -470,19 +572,22 @@ module "cloudfront" {
     aws = aws.us_east
   }
 
-  project_name = var.project_name
+  project_name    = var.project_name
+  domain_name     = var.domain_name
+  certificate_arn = module.acm_cloudfront.certificate_arn
 
   # Origin ALB DNS names
-  seoul_alb_dns_name   = module.alb_seoul.alb_dns_name
-  us_east_alb_dns_name = module.alb_us_east.alb_dns_name
-  us_west_alb_dns_name = module.alb_us_west.alb_dns_name
+  seoul_alb_dns_name   = "api-direct-seoul.hyundai.alwaysummer.dev"
+  us_east_alb_dns_name = "api-direct-us-east.hyundai.alwaysummer.dev"
+  us_west_alb_dns_name = "api-direct-us-west.hyundai.alwaysummer.dev"
 
   tags = var.tags
 
   depends_on = [
     module.alb_seoul,
     module.alb_us_east,
-    module.alb_us_west
+    module.alb_us_west,
+    module.acm_cloudfront
   ]
 }
 
@@ -498,10 +603,31 @@ module "monitoring" {
 
   project_name = var.project_name
 
-  # ECS cluster names (used for dashboard context)
+  # ECS cluster names
   seoul_ecs_cluster_name   = module.ecs_seoul.cluster_name
   us_east_ecs_cluster_name = module.ecs_us_east.cluster_name
   us_west_ecs_cluster_name = module.ecs_us_west.cluster_name
+
+  # ECS service names
+  seoul_frontend_service_name   = module.ecs_seoul.frontend_service_name
+  seoul_backend_service_name    = module.ecs_seoul.backend_service_name
+  us_east_frontend_service_name = module.ecs_us_east.frontend_service_name
+  us_east_backend_service_name  = module.ecs_us_east.backend_service_name
+  us_west_frontend_service_name = module.ecs_us_west.frontend_service_name
+  us_west_backend_service_name  = module.ecs_us_west.backend_service_name
+
+  # ALB ARN suffixes
+  seoul_alb_arn_suffix   = module.alb_seoul.alb_arn_suffix
+  us_east_alb_arn_suffix = module.alb_us_east.alb_arn_suffix
+  us_west_alb_arn_suffix = module.alb_us_west.alb_arn_suffix
+
+  # Target group ARN suffixes
+  seoul_frontend_tg_arn_suffix   = module.alb_seoul.frontend_target_group_arn_suffix
+  seoul_backend_tg_arn_suffix    = module.alb_seoul.backend_target_group_arn_suffix
+  us_east_frontend_tg_arn_suffix = module.alb_us_east.frontend_target_group_arn_suffix
+  us_east_backend_tg_arn_suffix  = module.alb_us_east.backend_target_group_arn_suffix
+  us_west_frontend_tg_arn_suffix = module.alb_us_west.frontend_target_group_arn_suffix
+  us_west_backend_tg_arn_suffix  = module.alb_us_west.backend_target_group_arn_suffix
 
   tags = var.tags
 

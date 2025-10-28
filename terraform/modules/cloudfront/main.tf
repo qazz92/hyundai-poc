@@ -86,11 +86,39 @@ resource "aws_cloudfront_origin_request_policy" "api" {
   }
 
   headers_config {
-    header_behavior = "allViewer"
+    header_behavior = "allViewerAndWhitelistCloudFront"
+    headers {
+      items = ["CloudFront-Viewer-Country"]
+    }
   }
 
   query_strings_config {
     query_string_behavior = "all"
+  }
+}
+
+# Response Headers Policy for CORS
+resource "aws_cloudfront_response_headers_policy" "cors" {
+  name    = "${var.project_name}-cors-policy"
+  comment = "CORS policy for Next.js SSR"
+
+  cors_config {
+    access_control_allow_credentials = false
+
+    access_control_allow_headers {
+      items = ["*"]
+    }
+
+    access_control_allow_methods {
+      items = ["GET", "HEAD", "OPTIONS", "PUT", "PATCH", "POST", "DELETE"]
+    }
+
+    access_control_allow_origins {
+      items = ["*"]
+    }
+
+    access_control_max_age_sec = 600
+    origin_override = true
   }
 }
 
@@ -99,23 +127,11 @@ resource "aws_cloudfront_distribution" "main" {
   enabled             = true
   is_ipv6_enabled     = var.enable_ipv6
   comment             = "${var.project_name} Global Distribution"
-  default_root_object = "index.html"
+  # Removed default_root_object for SSR - Next.js handles routing dynamically
   price_class         = var.price_class
+  aliases             = var.domain_name != "" ? [var.domain_name] : []
 
-  # Primary Origin: Seoul ALB
-  origin {
-    domain_name = var.seoul_alb_dns_name
-    origin_id   = "seoul-alb"
-
-    custom_origin_config {
-      http_port              = 80
-      https_port             = 443
-      origin_protocol_policy = "http-only"
-      origin_ssl_protocols   = ["TLSv1.2"]
-    }
-  }
-
-  # Secondary Origin: US-East ALB
+  # Single Origin: US-East ALB (frontend served globally from one region)
   origin {
     domain_name = var.us_east_alb_dns_name
     origin_id   = "us-east-alb"
@@ -123,53 +139,24 @@ resource "aws_cloudfront_distribution" "main" {
     custom_origin_config {
       http_port              = 80
       https_port             = 443
-      origin_protocol_policy = "http-only"
+      origin_protocol_policy = "https-only"
       origin_ssl_protocols   = ["TLSv1.2"]
     }
   }
 
-  # Tertiary Origin: US-West ALB
-  origin {
-    domain_name = var.us_west_alb_dns_name
-    origin_id   = "us-west-alb"
-
-    custom_origin_config {
-      http_port              = 80
-      https_port             = 443
-      origin_protocol_policy = "http-only"
-      origin_ssl_protocols   = ["TLSv1.2"]
-    }
-  }
-
-  # Origin Group with Failover
-  origin_group {
-    origin_id = "failover-group"
-
-    failover_criteria {
-      status_codes = [500, 502, 503, 504, 404]
-    }
-
-    member {
-      origin_id = "seoul-alb"
-    }
-
-    member {
-      origin_id = "us-east-alb"
-    }
-  }
-
-  # Default Cache Behavior (API calls - use single origin for POST/PUT/DELETE support)
+  # Default Cache Behavior (SSR pages - NO CACHING for dynamic content)
   default_cache_behavior {
-    allowed_methods            = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
-    cached_methods             = ["GET", "HEAD"]
-    target_origin_id           = "us-east-alb"
-    cache_policy_id            = aws_cloudfront_cache_policy.api.id
-    origin_request_policy_id   = aws_cloudfront_origin_request_policy.api.id
-    viewer_protocol_policy     = "redirect-to-https"
-    compress                   = false
-    smooth_streaming           = false
-    trusted_key_groups         = []
-    trusted_signers            = []
+    allowed_methods             = ["GET", "HEAD", "OPTIONS"]
+    cached_methods              = ["GET", "HEAD"]
+    target_origin_id            = "us-east-alb"
+    cache_policy_id             = aws_cloudfront_cache_policy.api.id  # Use no-cache policy for SSR
+    origin_request_policy_id    = aws_cloudfront_origin_request_policy.api.id  # Forward all headers/cookies for SSR
+    response_headers_policy_id  = aws_cloudfront_response_headers_policy.cors.id  # CORS headers
+    viewer_protocol_policy      = "redirect-to-https"
+    compress                    = var.enable_compression
+    smooth_streaming            = false
+    trusted_key_groups          = []
+    trusted_signers             = []
   }
 
   # Ordered Cache Behavior: Static Assets (Next.js)
@@ -177,7 +164,7 @@ resource "aws_cloudfront_distribution" "main" {
     path_pattern               = "/_next/static/*"
     allowed_methods            = ["GET", "HEAD", "OPTIONS"]
     cached_methods             = ["GET", "HEAD"]
-    target_origin_id           = "failover-group"
+    target_origin_id           = "us-east-alb"
     cache_policy_id            = aws_cloudfront_cache_policy.static_assets.id
     viewer_protocol_policy     = "redirect-to-https"
     compress                   = var.enable_compression
@@ -191,7 +178,7 @@ resource "aws_cloudfront_distribution" "main" {
     path_pattern               = "/static/*"
     allowed_methods            = ["GET", "HEAD", "OPTIONS"]
     cached_methods             = ["GET", "HEAD"]
-    target_origin_id           = "failover-group"
+    target_origin_id           = "us-east-alb"
     cache_policy_id            = aws_cloudfront_cache_policy.static_assets.id
     viewer_protocol_policy     = "redirect-to-https"
     compress                   = var.enable_compression
@@ -205,7 +192,7 @@ resource "aws_cloudfront_distribution" "main" {
     path_pattern               = "*.jpg"
     allowed_methods            = ["GET", "HEAD", "OPTIONS"]
     cached_methods             = ["GET", "HEAD"]
-    target_origin_id           = "failover-group"
+    target_origin_id           = "us-east-alb"
     cache_policy_id            = aws_cloudfront_cache_policy.static_assets.id
     viewer_protocol_policy     = "redirect-to-https"
     compress                   = var.enable_compression
@@ -219,7 +206,7 @@ resource "aws_cloudfront_distribution" "main" {
     path_pattern               = "*.png"
     allowed_methods            = ["GET", "HEAD", "OPTIONS"]
     cached_methods             = ["GET", "HEAD"]
-    target_origin_id           = "failover-group"
+    target_origin_id           = "us-east-alb"
     cache_policy_id            = aws_cloudfront_cache_policy.static_assets.id
     viewer_protocol_policy     = "redirect-to-https"
     compress                   = var.enable_compression
@@ -233,7 +220,7 @@ resource "aws_cloudfront_distribution" "main" {
     path_pattern               = "*.svg"
     allowed_methods            = ["GET", "HEAD", "OPTIONS"]
     cached_methods             = ["GET", "HEAD"]
-    target_origin_id           = "failover-group"
+    target_origin_id           = "us-east-alb"
     cache_policy_id            = aws_cloudfront_cache_policy.static_assets.id
     viewer_protocol_policy     = "redirect-to-https"
     compress                   = var.enable_compression
@@ -247,7 +234,7 @@ resource "aws_cloudfront_distribution" "main" {
     path_pattern               = "*.ico"
     allowed_methods            = ["GET", "HEAD", "OPTIONS"]
     cached_methods             = ["GET", "HEAD"]
-    target_origin_id           = "failover-group"
+    target_origin_id           = "us-east-alb"
     cache_policy_id            = aws_cloudfront_cache_policy.static_assets.id
     viewer_protocol_policy     = "redirect-to-https"
     compress                   = var.enable_compression
@@ -263,10 +250,12 @@ resource "aws_cloudfront_distribution" "main" {
     }
   }
 
-  # Viewer Certificate (default CloudFront certificate)
+  # Viewer Certificate (custom domain with ACM certificate or default)
   viewer_certificate {
-    cloudfront_default_certificate = true
+    acm_certificate_arn            = var.certificate_arn != "" ? var.certificate_arn : null
+    cloudfront_default_certificate = var.certificate_arn == "" ? true : false
     minimum_protocol_version       = "TLSv1.2_2021"
+    ssl_support_method             = var.certificate_arn != "" ? "sni-only" : null
   }
 
   tags = merge(
@@ -417,7 +406,7 @@ resource "aws_lambda_function" "geo_router" {
   function_name = "${var.project_name}-geo-router"
   role          = aws_iam_role.lambda_edge.arn
   handler       = "index.handler"
-  runtime       = "nodejs18.x"
+  runtime       = "nodejs22.x"
   publish       = true
   timeout       = 5
 
@@ -456,6 +445,7 @@ resource "aws_cloudfront_distribution" "api" {
   comment         = "${var.project_name} API Distribution with WAF"
   price_class     = var.price_class
   web_acl_id      = aws_wafv2_web_acl.api.arn
+  aliases         = var.domain_name != "" ? ["api.${var.domain_name}"] : []
 
   # Origin 1: Seoul ALB
   origin {
@@ -464,7 +454,7 @@ resource "aws_cloudfront_distribution" "api" {
     custom_origin_config {
       http_port              = 80
       https_port             = 443
-      origin_protocol_policy = "http-only"
+      origin_protocol_policy = "https-only"
       origin_ssl_protocols   = ["TLSv1.2"]
     }
     custom_header {
@@ -480,7 +470,7 @@ resource "aws_cloudfront_distribution" "api" {
     custom_origin_config {
       http_port              = 80
       https_port             = 443
-      origin_protocol_policy = "http-only"
+      origin_protocol_policy = "https-only"
       origin_ssl_protocols   = ["TLSv1.2"]
     }
     custom_header {
@@ -496,7 +486,7 @@ resource "aws_cloudfront_distribution" "api" {
     custom_origin_config {
       http_port              = 80
       https_port             = 443
-      origin_protocol_policy = "http-only"
+      origin_protocol_policy = "https-only"
       origin_ssl_protocols   = ["TLSv1.2"]
     }
     custom_header {
@@ -533,8 +523,10 @@ resource "aws_cloudfront_distribution" "api" {
   }
 
   viewer_certificate {
-    cloudfront_default_certificate = true
+    acm_certificate_arn            = var.certificate_arn != "" ? var.certificate_arn : null
+    cloudfront_default_certificate = var.certificate_arn == "" ? true : false
     minimum_protocol_version       = "TLSv1.2_2021"
+    ssl_support_method             = var.certificate_arn != "" ? "sni-only" : null
   }
 
   tags = merge(

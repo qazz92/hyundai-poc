@@ -108,8 +108,19 @@ variable "backend_url" {
   type        = string
 }
 
+variable "domain_name" {
+  description = "Domain name for Route53 hosted zone"
+  type        = string
+}
+
 variable "tags" {
   description = "Common tags to apply to all resources"
   type        = map(string)
   default     = {}
+}
+
+variable "enable_frontend" {
+  description = "Enable frontend service (set to false to remove frontend from region)"
+  type        = bool
+  default     = true
 }

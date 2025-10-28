@@ -224,270 +224,270 @@ resource "aws_cloudwatch_metric_stream" "main" {
 # Get current AWS account ID
 data "aws_caller_identity" "current" {}
 
-# CloudWatch Dashboard
-resource "aws_cloudwatch_dashboard" "main" {
-  dashboard_name = "Hyundai-POC-Global"
-
-  dashboard_body = jsonencode({
-    widgets = [
-      # Row 1: Regional Health Status
-      {
-        type = "metric"
-        properties = {
-          title   = "Seoul Region - Healthy Hosts"
-          region  = "ap-northeast-2"
-          metrics = [
-            ["AWS/ApplicationELB", "HealthyHostCount", { stat = "Average" }]
-          ]
-          period = 60
-          stat   = "Average"
-          yAxis = {
-            left = {
-              min = 0
-            }
-          }
-        }
-        width  = 8
-        height = 6
-        x      = 0
-        y      = 0
-      },
-      {
-        type = "metric"
-        properties = {
-          title   = "US-East Region - Healthy Hosts"
-          region  = "us-east-1"
-          metrics = [
-            ["AWS/ApplicationELB", "HealthyHostCount", { stat = "Average" }]
-          ]
-          period = 60
-          stat   = "Average"
-          yAxis = {
-            left = {
-              min = 0
-            }
-          }
-        }
-        width  = 8
-        height = 6
-        x      = 8
-        y      = 0
-      },
-      {
-        type = "metric"
-        properties = {
-          title   = "US-West Region - Healthy Hosts"
-          region  = "us-west-2"
-          metrics = [
-            ["AWS/ApplicationELB", "HealthyHostCount", { stat = "Average" }]
-          ]
-          period = 60
-          stat   = "Average"
-          yAxis = {
-            left = {
-              min = 0
-            }
-          }
-        }
-        width  = 8
-        height = 6
-        x      = 16
-        y      = 0
-      },
-
-      # Row 2: ECS CPU and Memory
-      {
-        type = "metric"
-        properties = {
-          title   = "ECS CPU Utilization - All Regions"
-          region  = "us-east-1"
-          metrics = [
-            ["AWS/ECS", "CPUUtilization", { region = "ap-northeast-2", stat = "Average", label = "Seoul" }],
-            ["AWS/ECS", "CPUUtilization", { region = "us-east-1", stat = "Average", label = "US-East" }],
-            ["AWS/ECS", "CPUUtilization", { region = "us-west-2", stat = "Average", label = "US-West" }]
-          ]
-          period = 60
-          stat   = "Average"
-          yAxis = {
-            left = {
-              min = 0
-              max = 100
-            }
-          }
-        }
-        width  = 12
-        height = 6
-        x      = 0
-        y      = 6
-      },
-      {
-        type = "metric"
-        properties = {
-          title   = "ECS Memory Utilization - All Regions"
-          region  = "us-east-1"
-          metrics = [
-            ["AWS/ECS", "MemoryUtilization", { region = "ap-northeast-2", stat = "Average", label = "Seoul" }],
-            ["AWS/ECS", "MemoryUtilization", { region = "us-east-1", stat = "Average", label = "US-East" }],
-            ["AWS/ECS", "MemoryUtilization", { region = "us-west-2", stat = "Average", label = "US-West" }]
-          ]
-          period = 60
-          stat   = "Average"
-          yAxis = {
-            left = {
-              min = 0
-              max = 100
-            }
-          }
-        }
-        width  = 12
-        height = 6
-        x      = 12
-        y      = 6
-      },
-
-      # Row 3: ALB Metrics
-      {
-        type = "metric"
-        properties = {
-          title   = "ALB Request Count - All Regions"
-          region  = "us-east-1"
-          view    = "timeSeries"
-          stacked = true
-          metrics = [
-            ["AWS/ApplicationELB", "RequestCount", { region = "ap-northeast-2", stat = "Sum", label = "Seoul" }],
-            ["AWS/ApplicationELB", "RequestCount", { region = "us-east-1", stat = "Sum", label = "US-East" }],
-            ["AWS/ApplicationELB", "RequestCount", { region = "us-west-2", stat = "Sum", label = "US-West" }]
-          ]
-          period = 60
-          stat   = "Sum"
-          yAxis = {
-            left = {
-              min = 0
-            }
-          }
-        }
-        width  = 12
-        height = 6
-        x      = 0
-        y      = 12
-      },
-      {
-        type = "metric"
-        properties = {
-          title   = "ALB Target Response Time - All Regions"
-          region  = "us-east-1"
-          metrics = [
-            ["AWS/ApplicationELB", "TargetResponseTime", { region = "ap-northeast-2", stat = "Average", label = "Seoul" }],
-            ["AWS/ApplicationELB", "TargetResponseTime", { region = "us-east-1", stat = "Average", label = "US-East" }],
-            ["AWS/ApplicationELB", "TargetResponseTime", { region = "us-west-2", stat = "Average", label = "US-West" }]
-          ]
-          period = 60
-          stat   = "Average"
-          yAxis = {
-            left = {
-              min = 0
-            }
-          }
-        }
-        width  = 12
-        height = 6
-        x      = 12
-        y      = 12
-      },
-
-      # Row 4: Aurora Metrics
-      {
-        type = "metric"
-        properties = {
-          title   = "Aurora CPU Utilization - All Clusters"
-          region  = "us-east-1"
-          metrics = [
-            ["AWS/RDS", "CPUUtilization", { region = "us-east-1", stat = "Average", label = "Primary (US-East)" }],
-            ["AWS/RDS", "CPUUtilization", { region = "ap-northeast-2", stat = "Average", label = "Seoul" }],
-            ["AWS/RDS", "CPUUtilization", { region = "us-west-2", stat = "Average", label = "US-West" }]
-          ]
-          period = 60
-          stat   = "Average"
-          yAxis = {
-            left = {
-              min = 0
-              max = 100
-            }
-          }
-        }
-        width  = 8
-        height = 6
-        x      = 0
-        y      = 18
-      },
-      {
-        type = "metric"
-        properties = {
-          title   = "Aurora Database Connections - All Clusters"
-          region  = "us-east-1"
-          metrics = [
-            ["AWS/RDS", "DatabaseConnections", { region = "us-east-1", stat = "Average", label = "Primary (US-East)" }],
-            ["AWS/RDS", "DatabaseConnections", { region = "ap-northeast-2", stat = "Average", label = "Seoul" }],
-            ["AWS/RDS", "DatabaseConnections", { region = "us-west-2", stat = "Average", label = "US-West" }]
-          ]
-          period = 60
-          stat   = "Average"
-          yAxis = {
-            left = {
-              min = 0
-            }
-          }
-        }
-        width  = 8
-        height = 6
-        x      = 8
-        y      = 18
-      },
-      {
-        type = "metric"
-        properties = {
-          title   = "Aurora Replication Lag (Secondaries)"
-          region  = "us-east-1"
-          metrics = [
-            ["AWS/RDS", "AuroraGlobalDBReplicationLag", { region = "ap-northeast-2", stat = "Average", label = "Seoul" }],
-            ["AWS/RDS", "AuroraGlobalDBReplicationLag", { region = "us-west-2", stat = "Average", label = "US-West" }]
-          ]
-          period = 60
-          stat   = "Average"
-          yAxis = {
-            left = {
-              min = 0
-            }
-          }
-        }
-        width  = 8
-        height = 6
-        x      = 16
-        y      = 18
-      },
-
-      # Row 5: Custom Application Metrics
-      {
-        type = "metric"
-        properties = {
-          title   = "Application Latency Measurements"
-          region  = "us-east-1"
-          metrics = [
-            ["HyundaiPOC/Application", "LatencyMeasurement", { stat = "Average" }]
-          ]
-          period = 60
-          stat   = "Average"
-          yAxis = {
-            left = {
-              min = 0
-            }
-          }
-        }
-        width  = 24
-        height = 6
-        x      = 0
-        y      = 24
-      }
-    ]
-  })
-}
+# CloudWatch Dashboard - OLD (Replaced by dashboard.tf)
+# # resource "aws_cloudwatch_dashboard" "main" {
+# #   dashboard_name = "Hyundai-POC-Global"
+# 
+#   dashboard_body = jsonencode({
+#     widgets = [
+#       # Row 1: Regional Health Status
+#       {
+#         type = "metric"
+#         properties = {
+#           title   = "Seoul Region - Healthy Hosts"
+#           region  = "ap-northeast-2"
+#           metrics = [
+#             ["AWS/ApplicationELB", "HealthyHostCount", { stat = "Average" }]
+#           ]
+#           period = 60
+#           stat   = "Average"
+#           yAxis = {
+#             left = {
+#               min = 0
+#             }
+#           }
+#         }
+#         width  = 8
+#         height = 6
+#         x      = 0
+#         y      = 0
+#       },
+#       {
+#         type = "metric"
+#         properties = {
+#           title   = "US-East Region - Healthy Hosts"
+#           region  = "us-east-1"
+#           metrics = [
+#             ["AWS/ApplicationELB", "HealthyHostCount", { stat = "Average" }]
+#           ]
+#           period = 60
+#           stat   = "Average"
+#           yAxis = {
+#             left = {
+#               min = 0
+#             }
+#           }
+#         }
+#         width  = 8
+#         height = 6
+#         x      = 8
+#         y      = 0
+#       },
+#       {
+#         type = "metric"
+#         properties = {
+#           title   = "US-West Region - Healthy Hosts"
+#           region  = "us-west-2"
+#           metrics = [
+#             ["AWS/ApplicationELB", "HealthyHostCount", { stat = "Average" }]
+#           ]
+#           period = 60
+#           stat   = "Average"
+#           yAxis = {
+#             left = {
+#               min = 0
+#             }
+#           }
+#         }
+#         width  = 8
+#         height = 6
+#         x      = 16
+#         y      = 0
+#       },
+# 
+#       # Row 2: ECS CPU and Memory
+#       {
+#         type = "metric"
+#         properties = {
+#           title   = "ECS CPU Utilization - All Regions"
+#           region  = "us-east-1"
+#           metrics = [
+#             ["AWS/ECS", "CPUUtilization", { region = "ap-northeast-2", stat = "Average", label = "Seoul" }],
+#             ["AWS/ECS", "CPUUtilization", { region = "us-east-1", stat = "Average", label = "US-East" }],
+#             ["AWS/ECS", "CPUUtilization", { region = "us-west-2", stat = "Average", label = "US-West" }]
+#           ]
+#           period = 60
+#           stat   = "Average"
+#           yAxis = {
+#             left = {
+#               min = 0
+#               max = 100
+#             }
+#           }
+#         }
+#         width  = 12
+#         height = 6
+#         x      = 0
+#         y      = 6
+#       },
+#       {
+#         type = "metric"
+#         properties = {
+#           title   = "ECS Memory Utilization - All Regions"
+#           region  = "us-east-1"
+#           metrics = [
+#             ["AWS/ECS", "MemoryUtilization", { region = "ap-northeast-2", stat = "Average", label = "Seoul" }],
+#             ["AWS/ECS", "MemoryUtilization", { region = "us-east-1", stat = "Average", label = "US-East" }],
+#             ["AWS/ECS", "MemoryUtilization", { region = "us-west-2", stat = "Average", label = "US-West" }]
+#           ]
+#           period = 60
+#           stat   = "Average"
+#           yAxis = {
+#             left = {
+#               min = 0
+#               max = 100
+#             }
+#           }
+#         }
+#         width  = 12
+#         height = 6
+#         x      = 12
+#         y      = 6
+#       },
+# 
+#       # Row 3: ALB Metrics
+#       {
+#         type = "metric"
+#         properties = {
+#           title   = "ALB Request Count - All Regions"
+#           region  = "us-east-1"
+#           view    = "timeSeries"
+#           stacked = true
+#           metrics = [
+#             ["AWS/ApplicationELB", "RequestCount", { region = "ap-northeast-2", stat = "Sum", label = "Seoul" }],
+#             ["AWS/ApplicationELB", "RequestCount", { region = "us-east-1", stat = "Sum", label = "US-East" }],
+#             ["AWS/ApplicationELB", "RequestCount", { region = "us-west-2", stat = "Sum", label = "US-West" }]
+#           ]
+#           period = 60
+#           stat   = "Sum"
+#           yAxis = {
+#             left = {
+#               min = 0
+#             }
+#           }
+#         }
+#         width  = 12
+#         height = 6
+#         x      = 0
+#         y      = 12
+#       },
+#       {
+#         type = "metric"
+#         properties = {
+#           title   = "ALB Target Response Time - All Regions"
+#           region  = "us-east-1"
+#           metrics = [
+#             ["AWS/ApplicationELB", "TargetResponseTime", { region = "ap-northeast-2", stat = "Average", label = "Seoul" }],
+#             ["AWS/ApplicationELB", "TargetResponseTime", { region = "us-east-1", stat = "Average", label = "US-East" }],
+#             ["AWS/ApplicationELB", "TargetResponseTime", { region = "us-west-2", stat = "Average", label = "US-West" }]
+#           ]
+#           period = 60
+#           stat   = "Average"
+#           yAxis = {
+#             left = {
+#               min = 0
+#             }
+#           }
+#         }
+#         width  = 12
+#         height = 6
+#         x      = 12
+#         y      = 12
+#       },
+# 
+#       # Row 4: Aurora Metrics
+#       {
+#         type = "metric"
+#         properties = {
+#           title   = "Aurora CPU Utilization - All Clusters"
+#           region  = "us-east-1"
+#           metrics = [
+#             ["AWS/RDS", "CPUUtilization", { region = "us-east-1", stat = "Average", label = "Primary (US-East)" }],
+#             ["AWS/RDS", "CPUUtilization", { region = "ap-northeast-2", stat = "Average", label = "Seoul" }],
+#             ["AWS/RDS", "CPUUtilization", { region = "us-west-2", stat = "Average", label = "US-West" }]
+#           ]
+#           period = 60
+#           stat   = "Average"
+#           yAxis = {
+#             left = {
+#               min = 0
+#               max = 100
+#             }
+#           }
+#         }
+#         width  = 8
+#         height = 6
+#         x      = 0
+#         y      = 18
+#       },
+#       {
+#         type = "metric"
+#         properties = {
+#           title   = "Aurora Database Connections - All Clusters"
+#           region  = "us-east-1"
+#           metrics = [
+#             ["AWS/RDS", "DatabaseConnections", { region = "us-east-1", stat = "Average", label = "Primary (US-East)" }],
+#             ["AWS/RDS", "DatabaseConnections", { region = "ap-northeast-2", stat = "Average", label = "Seoul" }],
+#             ["AWS/RDS", "DatabaseConnections", { region = "us-west-2", stat = "Average", label = "US-West" }]
+#           ]
+#           period = 60
+#           stat   = "Average"
+#           yAxis = {
+#             left = {
+#               min = 0
+#             }
+#           }
+#         }
+#         width  = 8
+#         height = 6
+#         x      = 8
+#         y      = 18
+#       },
+#       {
+#         type = "metric"
+#         properties = {
+#           title   = "Aurora Replication Lag (Secondaries)"
+#           region  = "us-east-1"
+#           metrics = [
+#             ["AWS/RDS", "AuroraGlobalDBReplicationLag", { region = "ap-northeast-2", stat = "Average", label = "Seoul" }],
+#             ["AWS/RDS", "AuroraGlobalDBReplicationLag", { region = "us-west-2", stat = "Average", label = "US-West" }]
+#           ]
+#           period = 60
+#           stat   = "Average"
+#           yAxis = {
+#             left = {
+#               min = 0
+#             }
+#           }
+#         }
+#         width  = 8
+#         height = 6
+#         x      = 16
+#         y      = 18
+#       },
+# 
+#       # Row 5: Custom Application Metrics
+#       {
+#         type = "metric"
+#         properties = {
+#           title   = "Application Latency Measurements"
+#           region  = "us-east-1"
+#           metrics = [
+#             ["HyundaiPOC/Application", "LatencyMeasurement", { stat = "Average" }]
+#           ]
+#           period = 60
+#           stat   = "Average"
+#           yAxis = {
+#             left = {
+#               min = 0
+#             }
+#           }
+#         }
+#         width  = 24
+#         height = 6
+# #         x      = 0
+# #         y      = 24
+# #       }
+# #     ]
+# #   })
+# # }

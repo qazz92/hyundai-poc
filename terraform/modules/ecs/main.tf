@@ -30,6 +30,8 @@ resource "aws_ecs_cluster" "main" {
 
 # CloudWatch Log Groups
 resource "aws_cloudwatch_log_group" "frontend" {
+  count = var.enable_frontend ? 1 : 0
+
   name              = "/ecs/${var.project_name}-frontend-${var.region_name}"
   retention_in_days = 7
 
@@ -45,6 +47,8 @@ resource "aws_cloudwatch_log_group" "backend" {
 
 # Frontend Task Definition
 resource "aws_ecs_task_definition" "frontend" {
+  count = var.enable_frontend ? 1 : 0
+
   family                   = "${var.project_name}-frontend-${var.region_name}"
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
@@ -84,24 +88,28 @@ resource "aws_ecs_task_definition" "frontend" {
         {
           name  = "NEXT_PUBLIC_API_URL"
           value = var.backend_url
+        },
+        {
+          name  = "NEXT_PUBLIC_ALB_SEOUL_URL"
+          value = "https://api-direct-seoul.${var.domain_name}/health"
+        },
+        {
+          name  = "NEXT_PUBLIC_ALB_US_EAST_URL"
+          value = "https://api-direct-us-east.${var.domain_name}/health"
+        },
+        {
+          name  = "NEXT_PUBLIC_ALB_US_WEST_URL"
+          value = "https://api-direct-us-west.${var.domain_name}/health"
         }
       ]
 
       logConfiguration = {
         logDriver = "awslogs"
         options = {
-          "awslogs-group"         = aws_cloudwatch_log_group.frontend.name
+          "awslogs-group"         = aws_cloudwatch_log_group.frontend[0].name
           "awslogs-region"        = var.aws_region
           "awslogs-stream-prefix" = "ecs"
         }
-      }
-
-      healthCheck = {
-        command     = ["CMD-SHELL", "curl -f http://localhost:3000/health || exit 1"]
-        interval    = 30
-        timeout     = 5
-        retries     = 3
-        startPeriod = 60
       }
     }
   ])
@@ -193,14 +201,6 @@ resource "aws_ecs_task_definition" "backend" {
           "awslogs-stream-prefix" = "ecs"
         }
       }
-
-      healthCheck = {
-        command     = ["CMD-SHELL", "curl -f http://localhost:3001/health || exit 1"]
-        interval    = 30
-        timeout     = 5
-        retries     = 3
-        startPeriod = 60
-      }
     }
   ])
 
@@ -214,9 +214,11 @@ resource "aws_ecs_task_definition" "backend" {
 
 # Frontend Service
 resource "aws_ecs_service" "frontend" {
+  count = var.enable_frontend ? 1 : 0
+
   name            = "${var.project_name}-frontend-service-${var.region_name}"
   cluster         = aws_ecs_cluster.main.id
-  task_definition = aws_ecs_task_definition.frontend.arn
+  task_definition = aws_ecs_task_definition.frontend[0].arn
   desired_count   = var.desired_count
   launch_type     = "FARGATE"
 

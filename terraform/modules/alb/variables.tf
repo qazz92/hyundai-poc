@@ -25,6 +25,17 @@ variable "security_group_id" {
   type        = string
 }
 
+variable "certificate_arn" {
+  description = "ACM certificate ARN for HTTPS listener"
+  type        = string
+  default     = ""
+}
+
+variable "domain_name" {
+  description = "Domain name for Route53 hosted zone"
+  type        = string
+}
+
 variable "tags" {
   description = "Common tags to apply to all resources"
   type        = map(string)

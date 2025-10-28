@@ -6,7 +6,13 @@ variable "project_name" {
 }
 
 variable "domain_name" {
-  description = "Primary domain name (e.g., hyundai-poc.com)"
+  description = "Primary domain name (e.g., hyundai.alwaysummer.dev)"
+  type        = string
+  default     = ""
+}
+
+variable "certificate_arn" {
+  description = "ACM certificate ARN for CloudFront (must be in us-east-1)"
   type        = string
   default     = ""
 }

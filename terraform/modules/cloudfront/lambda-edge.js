@@ -1,7 +1,3 @@
-// Lambda@Edge function for CloudFront Origin Request
-// This function runs at CloudFront edge locations BEFORE the request reaches the origin
-// and dynamically selects the appropriate regional origin based on viewer country
-
 'use strict';
 
 exports.handler = (event, context, callback) => {
@@ -12,12 +8,6 @@ exports.handler = (event, context, callback) => {
     const country = headers['cloudfront-viewer-country']
         ? headers['cloudfront-viewer-country'][0].value
         : 'US';
-
-    // Add custom secret header to verify request came from CloudFront
-    headers['x-cloudfront-secret'] = [{
-        key: 'X-CloudFront-Secret',
-        value: 'hyundai-poc-secret-2024'
-    }];
 
     // Define country to region mapping for optimal latency
     const asiaCountries = ['KR', 'JP', 'CN', 'TW', 'HK', 'SG', 'TH', 'VN', 'ID', 'MY', 'PH', 'IN'];
@@ -33,24 +23,31 @@ exports.handler = (event, context, callback) => {
         // Route to US-West origin for Oceania
         originDomainName = '${us_west_alb_dns_name}';
     } else {
-        // Route to US-East origin for all others (North America, Europe, Africa, South America)
+        // Route to US-East origin for all others
         originDomainName = '${us_east_alb_dns_name}';
     }
 
-    // Update request to use selected origin
+    // Update request to use selected origin with HTTPS
     request.origin = {
         custom: {
             domainName: originDomainName,
-            port: 80,
-            protocol: 'http',
+            port: 443,
+            protocol: 'https',
             path: '',
             sslProtocols: ['TLSv1.2'],
             readTimeout: 30,
             keepaliveTimeout: 5,
-            customHeaders: {}
+            customHeaders: {
+                'x-cloudfront-secret': [{
+                    key: 'X-CloudFront-Secret',
+                    value: 'hyundai-poc-secret-2024'
+                }]
+            }
         }
     };
-    request.headers['host'] = [{ key: 'host', value: originDomainName }];
+    
+    // Update Host header to match origin domain
+    request.headers['host'] = [{ key: 'Host', value: originDomainName }];
 
     callback(null, request);
 };

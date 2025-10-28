@@ -44,7 +44,7 @@ resource "aws_lb_target_group" "frontend" {
     unhealthy_threshold = 3
     timeout             = 5
     interval            = 30
-    path                = "/health"
+    path                = "/"
     protocol            = "HTTP"
     matcher             = "200"
   }
@@ -96,7 +96,7 @@ resource "aws_lb_target_group" "backend" {
   }
 }
 
-# HTTP Listener (port 80)
+# HTTP Listener (port 80) - Forward to target group (CloudFront uses HTTP)
 resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.main.arn
   port              = "80"
@@ -110,9 +110,51 @@ resource "aws_lb_listener" "http" {
   tags = var.tags
 }
 
-# Listener Rule for Backend API (path-based routing)
-resource "aws_lb_listener_rule" "backend_api" {
-  listener_arn = aws_lb_listener.http.arn
+# HTTPS Listener (port 443)
+resource "aws_lb_listener" "https" {
+  count = var.certificate_arn != "" ? 1 : 0
+
+  load_balancer_arn = aws_lb.main.arn
+  port              = "443"
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-2021-06"
+  certificate_arn   = var.certificate_arn
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.frontend.arn
+  }
+
+  tags = var.tags
+}
+
+
+# Listener Rule for _next static files (path-based routing) - HTTPS
+resource "aws_lb_listener_rule" "frontend_next_https" {
+  count = var.certificate_arn != "" ? 1 : 0
+
+  listener_arn = aws_lb_listener.https[0].arn
+  priority     = 50
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.frontend.arn
+  }
+
+  condition {
+    path_pattern {
+      values = ["/_next/*"]
+    }
+  }
+
+  tags = var.tags
+}
+
+# Listener Rule for Backend API (host-based routing) - HTTPS
+resource "aws_lb_listener_rule" "backend_api_https" {
+  count = var.certificate_arn != "" ? 1 : 0
+
+  listener_arn = aws_lb_listener.https[0].arn
   priority     = 100
 
   action {
@@ -121,14 +163,8 @@ resource "aws_lb_listener_rule" "backend_api" {
   }
 
   condition {
-    path_pattern {
-      values = [
-        "/health",
-        "/db-health",
-        "/metrics",
-        "/metrics/*",
-        "/test-write"
-      ]
+    host_header {
+      values = ["api-direct-*.${var.domain_name}"]
     }
   }
 

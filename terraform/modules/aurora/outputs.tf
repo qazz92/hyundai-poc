@@ -1,8 +1,8 @@
 # Aurora Module Outputs
 
 output "global_cluster_id" {
-  description = "Global cluster identifier"
-  value       = var.is_primary ? aws_rds_global_cluster.main[0].id : null
+  description = "Global Cluster ID"
+  value       = var.is_primary && length(aws_rds_global_cluster.main) > 0 ? aws_rds_global_cluster.main[0].id : null
 }
 
 output "cluster_id" {
