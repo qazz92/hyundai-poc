@@ -83,164 +83,164 @@ resource "aws_route53_health_check" "us_west" {
   )
 }
 
-# Main Domain - Seoul Regional Record (Asia geolocation)
-resource "aws_route53_record" "main_seoul" {
-  zone_id = local.hosted_zone_id
-  name    = var.domain_name
-  type    = "A"
+# # Main Domain - Seoul Regional Record (Asia geolocation)
+# resource "aws_route53_record" "main_seoul" {
+#   zone_id = local.hosted_zone_id
+#   name    = var.domain_name
+#   type    = "A"
 
-  alias {
-    name                   = var.seoul_alb_dns_name
-    zone_id                = var.seoul_alb_zone_id
-    evaluate_target_health = true
-  }
+#   alias {
+#     name                   = var.seoul_alb_dns_name
+#     zone_id                = var.seoul_alb_zone_id
+#     evaluate_target_health = true
+#   }
 
-  set_identifier  = "seoul-alb"
-  health_check_id = aws_route53_health_check.seoul.id
+#   set_identifier  = "seoul-alb"
+#   health_check_id = aws_route53_health_check.seoul.id
 
-  geolocation_routing_policy {
-    continent = "AS"
-  }
-}
+#   geolocation_routing_policy {
+#     continent = "AS"
+#   }
+# }
 
-# Main Domain - US Record (North America geolocation)
-resource "aws_route53_record" "main_us" {
-  zone_id = local.hosted_zone_id
-  name    = var.domain_name
-  type    = "A"
+# # Main Domain - US Record (North America geolocation)
+# resource "aws_route53_record" "main_us" {
+#   zone_id = local.hosted_zone_id
+#   name    = var.domain_name
+#   type    = "A"
 
-  alias {
-    name                   = var.us_east_alb_dns_name
-    zone_id                = var.us_east_alb_zone_id
-    evaluate_target_health = true
-  }
+#   alias {
+#     name                   = var.us_east_alb_dns_name
+#     zone_id                = var.us_east_alb_zone_id
+#     evaluate_target_health = true
+#   }
 
-  set_identifier  = "us-alb"
-  health_check_id = aws_route53_health_check.us_east.id
+#   set_identifier  = "us-alb"
+#   health_check_id = aws_route53_health_check.us_east.id
 
-  geolocation_routing_policy {
-    continent = "NA"
-  }
-}
+#   geolocation_routing_policy {
+#     continent = "NA"
+#   }
+# }
 
-# Main Domain - Europe Record (for European traffic)
-resource "aws_route53_record" "main_europe" {
-  zone_id = local.hosted_zone_id
-  name    = var.domain_name
-  type    = "A"
+# # Main Domain - Europe Record (for European traffic)
+# resource "aws_route53_record" "main_europe" {
+#   zone_id = local.hosted_zone_id
+#   name    = var.domain_name
+#   type    = "A"
 
-  alias {
-    name                   = var.us_east_alb_dns_name
-    zone_id                = var.us_east_alb_zone_id
-    evaluate_target_health = true
-  }
+#   alias {
+#     name                   = var.us_east_alb_dns_name
+#     zone_id                = var.us_east_alb_zone_id
+#     evaluate_target_health = true
+#   }
 
-  set_identifier  = "europe-alb"
-  health_check_id = aws_route53_health_check.us_east.id
+#   set_identifier  = "europe-alb"
+#   health_check_id = aws_route53_health_check.us_east.id
 
-  geolocation_routing_policy {
-    continent = "EU"
-  }
-}
+#   geolocation_routing_policy {
+#     continent = "EU"
+#   }
+# }
 
-# Main Domain - South America Record
-resource "aws_route53_record" "main_sa" {
-  zone_id = local.hosted_zone_id
-  name    = var.domain_name
-  type    = "A"
+# # Main Domain - South America Record
+# resource "aws_route53_record" "main_sa" {
+#   zone_id = local.hosted_zone_id
+#   name    = var.domain_name
+#   type    = "A"
 
-  alias {
-    name                   = var.us_east_alb_dns_name
-    zone_id                = var.us_east_alb_zone_id
-    evaluate_target_health = true
-  }
+#   alias {
+#     name                   = var.us_east_alb_dns_name
+#     zone_id                = var.us_east_alb_zone_id
+#     evaluate_target_health = true
+#   }
 
-  set_identifier  = "sa-alb"
-  health_check_id = aws_route53_health_check.us_east.id
+#   set_identifier  = "sa-alb"
+#   health_check_id = aws_route53_health_check.us_east.id
 
-  geolocation_routing_policy {
-    continent = "SA"
-  }
-}
+#   geolocation_routing_policy {
+#     continent = "SA"
+#   }
+# }
 
-# Main Domain - Oceania Record
-resource "aws_route53_record" "main_oc" {
-  zone_id = local.hosted_zone_id
-  name    = var.domain_name
-  type    = "A"
+# # Main Domain - Oceania Record
+# resource "aws_route53_record" "main_oc" {
+#   zone_id = local.hosted_zone_id
+#   name    = var.domain_name
+#   type    = "A"
 
-  alias {
-    name                   = var.us_west_alb_dns_name
-    zone_id                = var.us_west_alb_zone_id
-    evaluate_target_health = true
-  }
+#   alias {
+#     name                   = var.us_west_alb_dns_name
+#     zone_id                = var.us_west_alb_zone_id
+#     evaluate_target_health = true
+#   }
 
-  set_identifier  = "oc-alb"
-  health_check_id = aws_route53_health_check.us_west.id
+#   set_identifier  = "oc-alb"
+#   health_check_id = aws_route53_health_check.us_west.id
 
-  geolocation_routing_policy {
-    continent = "OC"
-  }
-}
+#   geolocation_routing_policy {
+#     continent = "OC"
+#   }
+# }
 
-# Main Domain - Africa Record
-resource "aws_route53_record" "main_af" {
-  zone_id = local.hosted_zone_id
-  name    = var.domain_name
-  type    = "A"
+# # Main Domain - Africa Record
+# resource "aws_route53_record" "main_af" {
+#   zone_id = local.hosted_zone_id
+#   name    = var.domain_name
+#   type    = "A"
 
-  alias {
-    name                   = var.us_east_alb_dns_name
-    zone_id                = var.us_east_alb_zone_id
-    evaluate_target_health = true
-  }
+#   alias {
+#     name                   = var.us_east_alb_dns_name
+#     zone_id                = var.us_east_alb_zone_id
+#     evaluate_target_health = true
+#   }
 
-  set_identifier  = "af-alb"
-  health_check_id = aws_route53_health_check.us_east.id
+#   set_identifier  = "af-alb"
+#   health_check_id = aws_route53_health_check.us_east.id
 
-  geolocation_routing_policy {
-    continent = "AF"
-  }
-}
+#   geolocation_routing_policy {
+#     continent = "AF"
+#   }
+# }
 
-# Seoul Regional Subdomain Record
-resource "aws_route53_record" "seoul" {
-  zone_id = local.hosted_zone_id
-  name    = "seoul.${var.domain_name}"
-  type    = "A"
+# # Seoul Regional Subdomain Record
+# resource "aws_route53_record" "seoul" {
+#   zone_id = local.hosted_zone_id
+#   name    = "seoul.${var.domain_name}"
+#   type    = "A"
 
-  alias {
-    name                   = var.seoul_alb_dns_name
-    zone_id                = var.seoul_alb_zone_id
-    evaluate_target_health = true
-  }
-}
+#   alias {
+#     name                   = var.seoul_alb_dns_name
+#     zone_id                = var.seoul_alb_zone_id
+#     evaluate_target_health = true
+#   }
+# }
 
-# US-East Regional Subdomain Record
-resource "aws_route53_record" "us_east" {
-  zone_id = local.hosted_zone_id
-  name    = "us-east.${var.domain_name}"
-  type    = "A"
+# # US-East Regional Subdomain Record
+# resource "aws_route53_record" "us_east" {
+#   zone_id = local.hosted_zone_id
+#   name    = "us-east.${var.domain_name}"
+#   type    = "A"
 
-  alias {
-    name                   = var.us_east_alb_dns_name
-    zone_id                = var.us_east_alb_zone_id
-    evaluate_target_health = true
-  }
-}
+#   alias {
+#     name                   = var.us_east_alb_dns_name
+#     zone_id                = var.us_east_alb_zone_id
+#     evaluate_target_health = true
+#   }
+# }
 
-# US-West Regional Subdomain Record
-resource "aws_route53_record" "us_west" {
-  zone_id = local.hosted_zone_id
-  name    = "us-west.${var.domain_name}"
-  type    = "A"
+# # US-West Regional Subdomain Record
+# resource "aws_route53_record" "us_west" {
+#   zone_id = local.hosted_zone_id
+#   name    = "us-west.${var.domain_name}"
+#   type    = "A"
 
-  alias {
-    name                   = var.us_west_alb_dns_name
-    zone_id                = var.us_west_alb_zone_id
-    evaluate_target_health = true
-  }
-}
+#   alias {
+#     name                   = var.us_west_alb_dns_name
+#     zone_id                = var.us_west_alb_zone_id
+#     evaluate_target_health = true
+#   }
+# }
 
 # Main API Record (via CloudFront with WAF)
 resource "aws_route53_record" "api" {
@@ -293,17 +293,17 @@ resource "aws_route53_record" "api_direct_us_west" {
 }
 
 # CloudFront Record for www subdomain (global distribution)
-resource "aws_route53_record" "cloudfront" {
-  zone_id = local.hosted_zone_id
-  name    = "www.${var.domain_name}"
-  type    = "A"
+# resource "aws_route53_record" "cloudfront" {
+#   zone_id = local.hosted_zone_id
+#   name    = "www.${var.domain_name}"
+#   type    = "A"
 
-  alias {
-    name                   = var.cloudfront_domain_name
-    zone_id                = var.cloudfront_hosted_zone_id
-    evaluate_target_health = false
-  }
-}
+#   alias {
+#     name                   = var.cloudfront_domain_name
+#     zone_id                = var.cloudfront_hosted_zone_id
+#     evaluate_target_health = false
+#   }
+# }
 
 # Root domain record pointing to CloudFront (optional)
 # DISABLED: Root domain already handled by geolocation records (main_seoul, main_us, etc.)

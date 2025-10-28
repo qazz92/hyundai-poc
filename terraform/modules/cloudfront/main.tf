@@ -88,7 +88,7 @@ resource "aws_cloudfront_origin_request_policy" "api" {
   headers_config {
     header_behavior = "allViewerAndWhitelistCloudFront"
     headers {
-      items = ["CloudFront-Viewer-Country"]
+      items = ["CloudFront-Viewer-Country", "CloudFront-Viewer-Latitude", "CloudFront-Viewer-Longitude", "CloudFront-Viewer-Time-Zone"]
     }
   }
 

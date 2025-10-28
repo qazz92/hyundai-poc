@@ -98,9 +98,26 @@ router.get('/latency', async (req, res, next) => {
  */
 async function getAuroraReplicationLag() {
   try {
+    // Extract cluster identifier from DB_READER_HOST
+    const dbReaderHost = process.env.DB_READER_HOST || '';
+    const clusterMatch = dbReaderHost.match(/^([\w-]+)\.cluster/);
+
+    if (!clusterMatch) {
+      console.error('Could not extract cluster identifier from DB_READER_HOST:', dbReaderHost);
+      return null;
+    }
+
+    const clusterIdentifier = clusterMatch[1];
+
     const params = {
       MetricName: 'AuroraGlobalDBReplicationLag',
       Namespace: 'AWS/RDS',
+      Dimensions: [
+        {
+          Name: 'DBClusterIdentifier',
+          Value: clusterIdentifier,
+        },
+      ],
       StartTime: new Date(Date.now() - 5 * 60 * 1000), // 5 minutes ago
       EndTime: new Date(),
       Period: 60,

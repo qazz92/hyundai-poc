@@ -7,27 +7,8 @@ resource "aws_cloudwatch_dashboard" "main_new" {
   dashboard_body = jsonencode({
     widgets = [
       # ====================
-      # Row 1: Frontend Healthy Hosts (Seoul, US-East, US-West)
+      # Row 1: Frontend Healthy Hosts (US-East only)
       # ====================
-      {
-        type   = "metric"
-        width  = 8
-        height = 6
-        x      = 0
-        y      = 0
-        properties = {
-          title  = "Seoul - Frontend Healthy Hosts"
-          region = "ap-northeast-2"
-          metrics = [
-            ["AWS/ApplicationELB", "HealthyHostCount", "TargetGroup", var.seoul_frontend_tg_arn_suffix, "LoadBalancer", var.seoul_alb_arn_suffix, { stat = "Average", label = "Frontend" }]
-          ]
-          period = 60
-          stat   = "Average"
-          yAxis = {
-            left = { min = 0 }
-          }
-        }
-      },
       {
         type   = "metric"
         width  = 8
@@ -39,25 +20,6 @@ resource "aws_cloudwatch_dashboard" "main_new" {
           region = "us-east-1"
           metrics = [
             ["AWS/ApplicationELB", "HealthyHostCount", "TargetGroup", var.us_east_frontend_tg_arn_suffix, "LoadBalancer", var.us_east_alb_arn_suffix, { stat = "Average", label = "Frontend" }]
-          ]
-          period = 60
-          stat   = "Average"
-          yAxis = {
-            left = { min = 0 }
-          }
-        }
-      },
-      {
-        type   = "metric"
-        width  = 8
-        height = 6
-        x      = 16
-        y      = 0
-        properties = {
-          title  = "US-West - Frontend Healthy Hosts"
-          region = "us-west-2"
-          metrics = [
-            ["AWS/ApplicationELB", "HealthyHostCount", "TargetGroup", var.us_west_frontend_tg_arn_suffix, "LoadBalancer", var.us_west_alb_arn_suffix, { stat = "Average", label = "Frontend" }]
           ]
           period = 60
           stat   = "Average"
@@ -129,27 +91,8 @@ resource "aws_cloudwatch_dashboard" "main_new" {
       },
 
       # ====================
-      # Row 3: Frontend CPU Utilization (Seoul, US-East, US-West)
+      # Row 3: Frontend CPU Utilization (US-East only)
       # ====================
-      {
-        type   = "metric"
-        width  = 8
-        height = 6
-        x      = 0
-        y      = 12
-        properties = {
-          title  = "Seoul - Frontend CPU"
-          region = "ap-northeast-2"
-          metrics = [
-            ["AWS/ECS", "CPUUtilization", "ClusterName", var.seoul_ecs_cluster_name, "ServiceName", var.seoul_frontend_service_name, { stat = "Average" }]
-          ]
-          period = 60
-          stat   = "Average"
-          yAxis = {
-            left = { min = 0, max = 100 }
-          }
-        }
-      },
       {
         type   = "metric"
         width  = 8
@@ -161,25 +104,6 @@ resource "aws_cloudwatch_dashboard" "main_new" {
           region = "us-east-1"
           metrics = [
             ["AWS/ECS", "CPUUtilization", "ClusterName", var.us_east_ecs_cluster_name, "ServiceName", var.us_east_frontend_service_name, { stat = "Average" }]
-          ]
-          period = 60
-          stat   = "Average"
-          yAxis = {
-            left = { min = 0, max = 100 }
-          }
-        }
-      },
-      {
-        type   = "metric"
-        width  = 8
-        height = 6
-        x      = 16
-        y      = 12
-        properties = {
-          title  = "US-West - Frontend CPU"
-          region = "us-west-2"
-          metrics = [
-            ["AWS/ECS", "CPUUtilization", "ClusterName", var.us_west_ecs_cluster_name, "ServiceName", var.us_west_frontend_service_name, { stat = "Average" }]
           ]
           period = 60
           stat   = "Average"
@@ -251,27 +175,8 @@ resource "aws_cloudwatch_dashboard" "main_new" {
       },
 
       # ====================
-      # Row 5: Frontend Memory Utilization (Seoul, US-East, US-West)
+      # Row 5: Frontend Memory Utilization (US-East only)
       # ====================
-      {
-        type   = "metric"
-        width  = 8
-        height = 6
-        x      = 0
-        y      = 24
-        properties = {
-          title  = "Seoul - Frontend Memory"
-          region = "ap-northeast-2"
-          metrics = [
-            ["AWS/ECS", "MemoryUtilization", "ClusterName", var.seoul_ecs_cluster_name, "ServiceName", var.seoul_frontend_service_name, { stat = "Average" }]
-          ]
-          period = 60
-          stat   = "Average"
-          yAxis = {
-            left = { min = 0, max = 100 }
-          }
-        }
-      },
       {
         type   = "metric"
         width  = 8
@@ -283,25 +188,6 @@ resource "aws_cloudwatch_dashboard" "main_new" {
           region = "us-east-1"
           metrics = [
             ["AWS/ECS", "MemoryUtilization", "ClusterName", var.us_east_ecs_cluster_name, "ServiceName", var.us_east_frontend_service_name, { stat = "Average" }]
-          ]
-          period = 60
-          stat   = "Average"
-          yAxis = {
-            left = { min = 0, max = 100 }
-          }
-        }
-      },
-      {
-        type   = "metric"
-        width  = 8
-        height = 6
-        x      = 16
-        y      = 24
-        properties = {
-          title  = "US-West - Frontend Memory"
-          region = "us-west-2"
-          metrics = [
-            ["AWS/ECS", "MemoryUtilization", "ClusterName", var.us_west_ecs_cluster_name, "ServiceName", var.us_west_frontend_service_name, { stat = "Average" }]
           ]
           period = 60
           stat   = "Average"
@@ -475,8 +361,8 @@ resource "aws_cloudwatch_dashboard" "main_new" {
           title  = "Aurora Replication Lag (Secondaries)"
           region = "us-east-1"
           metrics = [
-            ["AWS/RDS", "AuroraGlobalDBReplicationLag", { region = "ap-northeast-2", stat = "Average", label = "Seoul" }],
-            ["AWS/RDS", "AuroraGlobalDBReplicationLag", { region = "us-west-2", stat = "Average", label = "US-West" }]
+            ["AWS/RDS", "AuroraGlobalDBReplicationLag", "DBClusterIdentifier", "hyundai-poc-cluster-seoul", { region = "ap-northeast-2", stat = "Average", label = "Seoul" }],
+            [".", ".", ".", "hyundai-poc-cluster-us-west", { region = "us-west-2", stat = "Average", label = "US-West" }]
           ]
           period = 60
           stat   = "Average"

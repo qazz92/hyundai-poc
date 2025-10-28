@@ -244,6 +244,12 @@ resource "aws_ecs_service" "frontend" {
   )
 
   depends_on = [var.alb_listener_arn]
+
+  lifecycle {
+    ignore_changes = [ 
+      task_definition
+     ]
+  }
 }
 
 # Backend Service

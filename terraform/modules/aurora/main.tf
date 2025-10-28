@@ -111,6 +111,7 @@ resource "aws_rds_cluster" "aurora" {
   lifecycle {
     ignore_changes = [
       global_cluster_identifier,
+      replication_source_identifier,
       database_name,
       master_username,
       master_password,
